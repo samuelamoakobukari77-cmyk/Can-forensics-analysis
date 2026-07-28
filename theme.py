@@ -10,6 +10,7 @@ ledger, SHAP, or PDF generation. Safe to tweak colors/copy here
 without risk to the underlying pipeline.
 """
 
+import textwrap
 import time
 
 import plotly.graph_objects as go
@@ -40,7 +41,7 @@ LABEL_COLORS = {
 def inject_theme() -> None:
     """Injects the CAN FORENSICS glassmorphism theme. Call once near the top of main()."""
     st.markdown(
-        f"""
+        textwrap.dedent(f"""
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
         <style>
         .stApp {{
@@ -140,7 +141,7 @@ def inject_theme() -> None:
             border-radius: 8px;
         }}
         </style>
-        """,
+        """),
         unsafe_allow_html=True,
     )
 
@@ -284,7 +285,7 @@ def pursuit_vehicle_banner(case_id: str = "", packet_count: int = 0) -> None:
     real-world imagery — an original SVG interceptor silhouette only.
     """
     st.markdown(
-        f"""
+        textwrap.dedent(f"""
         <div style="
             position: relative;
             background: linear-gradient(135deg, rgba(116,245,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
@@ -329,7 +330,7 @@ def pursuit_vehicle_banner(case_id: str = "", packet_count: int = 0) -> None:
                 </div>
             </div>
         </div>
-        """,
+        """),
         unsafe_allow_html=True,
     )
 
@@ -357,7 +358,7 @@ def recent_traffic_table(df, n: int = 6) -> None:
         """
 
     st.markdown(
-        f"""
+        textwrap.dedent(f"""
         <div style="background:{PANEL}; backdrop-filter: blur(20px); border:1px solid {BORDER}; border-radius: 10px; overflow:hidden;" class="fade-in">
             <div style="padding: 12px 16px; border-bottom: 1px solid {BORDER}; display:flex; justify-content:space-between; align-items:center;">
                 <span style="font-family:'JetBrains Mono',monospace; font-size:0.7rem; letter-spacing:0.1em; color:#e2e2e8; text-transform:uppercase;">Recent CAN Traffic</span>
@@ -375,6 +376,6 @@ def recent_traffic_table(df, n: int = 6) -> None:
                 <tbody>{row_html}</tbody>
             </table>
         </div>
-        """,
+        """),
         unsafe_allow_html=True,
     )
