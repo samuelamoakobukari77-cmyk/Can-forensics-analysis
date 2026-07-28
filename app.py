@@ -45,7 +45,7 @@ from timeline_ui import render_timeline_tab
 from train_demo_model import FEATURE_NAMES, build_feature_row, generate_synthetic_raw_can_log
 from shap_explain import DetectionExplainer
 from shap_ui import render_shap_tab
-from theme import inject_theme, animated_metric_row, threat_gauge, severity_badge, pursuit_vehicle_banner
+from theme import inject_theme, animated_metric_row, threat_gauge, severity_badge, pursuit_vehicle_banner, recent_traffic_table
 from report_styles import REPORT_STYLES, get_style_keys_and_labels
 
 st.set_page_config(page_title="CAN Bus Forensic Analysis", layout="wide", page_icon="🚗")
@@ -346,7 +346,7 @@ def main():
     ])
 
     with tabs[0]:
-        pursuit_vehicle_banner()
+        pursuit_vehicle_banner(case_id=st.session_state.case_id, packet_count=len(df))
 
         total = len(df)
         attack = int((df["label"] != "Normal").sum())
@@ -381,6 +381,10 @@ def main():
                 st.success("✅ Evidence ledger intact — all hashes verified")
             else:
                 st.error("⚠️ Evidence ledger integrity check FAILED")
+
+        st.markdown("---")
+        st.markdown("##### Recent CAN traffic")
+        recent_traffic_table(df, n=6)
 
         st.markdown("---")
         incidents_df_export = None
