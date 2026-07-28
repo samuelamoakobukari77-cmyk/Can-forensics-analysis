@@ -1,0 +1,7 @@
+streamlit
+pandas
+plotly
+shap
+scikit-learn
+joblib
+reportlab
