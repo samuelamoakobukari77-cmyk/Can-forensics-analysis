@@ -285,40 +285,15 @@ def main():
         uploaded = st.file_uploader("Upload CSV (timestamp, can_id, dlc, data)", type=["csv"])
         use_demo = st.button("🧪 Or generate demo data instead")
 
-        run_analysis = False
-        raw_df = None
-
+        pending_source = None
         if uploaded is not None:
-            raw_df = pd.read_csv(uploaded)
-            run_analysis = st.button("▶️ Run detection on uploaded log")
+            if st.button("▶️ Run detection on uploaded log"):
+                pending_source = ("upload", uploaded)
         elif use_demo:
-            raw_df = generate_synthetic_raw_can_log(duration_seconds=45, n_incidents=3, seed=42)
-            run_analysis = True
+            pending_source = ("demo", None)
 
-        if run_analysis and raw_df is not None:
-            explainer = load_model_and_explainer()
-            with st.status("Running forensic pipeline...", expanded=True) as status:
-                st.write("🔧 Engineering features from raw CAN frames...")
-                engineered = engineer_features(raw_df)
-                st.write("🧠 Classifying traffic with trained model...")
-                classified = classify(engineered, explainer)
-                st.write("🔗 Logging detections to evidence ledger...")
-                status.update(label="Pipeline complete", state="complete", expanded=False)
-            st.session_state.classified_df = classified
-
-            st.session_state.ledger.add_record("capture", {
-                "packet_count": len(classified),
-                "source": "uploaded_csv" if uploaded is not None else "demo_data",
-            })
-            attack_rows = classified[classified["label"] != "Normal"]
-            for _, r in attack_rows.iterrows():
-                st.session_state.ledger.add_record("detection", {
-                    "timestamp": float(r["timestamp"]),
-                    "can_id": r["can_id"],
-                    "label": r["label"],
-                    "confidence": float(r["confidence"]),
-                })
-            st.success(f"Classified {len(classified)} packets, logged {len(attack_rows)} detections to the ledger.")
+        if pending_source is not None:
+            st.session_state.pending_source = pending_source
 
         st.markdown("---")
         st.subheader("Report style")
@@ -332,6 +307,39 @@ def main():
             value=st.session_state.get("report_requirements", ""),
             help="Anything specific your agency wants included — inserted as its own section in the report.",
         )
+
+    if st.session_state.get("pending_source") is not None:
+        source_type, source_obj = st.session_state.pending_source
+        st.session_state.pending_source = None
+
+        if source_type == "upload":
+            raw_df = pd.read_csv(source_obj)
+        else:
+            raw_df = generate_synthetic_raw_can_log(duration_seconds=45, n_incidents=3, seed=42)
+
+        explainer = load_model_and_explainer()
+        with st.status("Running forensic pipeline...", expanded=True) as status:
+            st.write("🔧 Engineering features from raw CAN frames...")
+            engineered = engineer_features(raw_df)
+            st.write("🧠 Classifying traffic with trained model...")
+            classified = classify(engineered, explainer)
+            st.write("🔗 Logging detections to evidence ledger...")
+            status.update(label="Pipeline complete", state="complete", expanded=False)
+        st.session_state.classified_df = classified
+
+        st.session_state.ledger.add_record("capture", {
+            "packet_count": len(classified),
+            "source": "uploaded_csv" if source_type == "upload" else "demo_data",
+        })
+        attack_rows = classified[classified["label"] != "Normal"]
+        for _, r in attack_rows.iterrows():
+            st.session_state.ledger.add_record("detection", {
+                "timestamp": float(r["timestamp"]),
+                "can_id": r["can_id"],
+                "label": r["label"],
+                "confidence": float(r["confidence"]),
+            })
+        st.success(f"Classified {len(classified)} packets, logged {len(attack_rows)} detections to the ledger.")
 
     if st.session_state.classified_df is None:
         st.info("👈 Upload a CAN log or generate demo data from the sidebar to begin.")
